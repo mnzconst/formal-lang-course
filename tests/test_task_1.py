@@ -8,11 +8,37 @@ import os
 @pytest.mark.parametrize(
     "graph_name, expected_output",
     [
-        ("skos", (144, 252,
-                  ['type', 'definition', 'isDefinedBy', 'label', 'subPropertyOf', 'comment', 'scopeNote', 'inverseOf',
-                   'range', 'domain', 'contributor', 'disjointWith', 'creator', 'example', 'first', 'rest',
-                   'description', 'seeAlso', 'subClassOf', 'title', 'unionOf'])),
-        ("wc", (332, 269, ['d', 'a']))
+        (
+            "skos",
+            (
+                144,
+                252,
+                [
+                    "type",
+                    "definition",
+                    "isDefinedBy",
+                    "label",
+                    "subPropertyOf",
+                    "comment",
+                    "scopeNote",
+                    "inverseOf",
+                    "range",
+                    "domain",
+                    "contributor",
+                    "disjointWith",
+                    "creator",
+                    "example",
+                    "first",
+                    "rest",
+                    "description",
+                    "seeAlso",
+                    "subClassOf",
+                    "title",
+                    "unionOf",
+                ],
+            ),
+        ),
+        ("wc", (332, 269, ["d", "a"])),
     ],
 )
 def test_graph_info(graph_name, expected_output):
@@ -25,8 +51,8 @@ def test_graph_info(graph_name, expected_output):
 @pytest.mark.parametrize(
     "v_graph_1, v_graph_2, file_name, labels, expected_graph",
     [
-        (10, 20, "./output", ('a', 'b'), [31, 32, ['b', 'a']]),
-        (42, 17, "./result", ('asc', 'qwb'), [60, 61, ['asc', 'qwb']]),
+        (10, 20, "./output", ("a", "b"), [31, 32, ["b", "a"]]),
+        (42, 17, "./result", ("asc", "qwb"), [60, 61, ["asc", "qwb"]]),
     ],
 )
 def test_graph_combine(v_graph_1, v_graph_2, file_name, labels, expected_graph):
