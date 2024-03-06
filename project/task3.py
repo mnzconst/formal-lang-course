@@ -11,11 +11,15 @@ class FiniteAutomaton:
     states_to_int = None
     nfa = None
 
-    def __init__(self, fa: NondeterministicFiniteAutomaton = None,
-                 *, matrix=None,
-                 start_states=None,
-                 final_states=None,
-                 states_to_int=None):
+    def __init__(
+        self,
+        fa: NondeterministicFiniteAutomaton = None,
+        *,
+        matrix=None,
+        start_states=None,
+        final_states=None,
+        states_to_int=None
+    ):
         if fa is None:
             self.matrix = matrix
             self.start_states = start_states
@@ -61,7 +65,7 @@ def to_nfa(fa: FiniteAutomaton):
                     nfa.add_transition(
                         State(fa.states_to_int[State(u)]),
                         symbol,
-                        State(fa.states_to_int[State(v)])
+                        State(fa.states_to_int[State(v)]),
                     )
 
     for state in fa.start_states:
@@ -72,8 +76,7 @@ def to_nfa(fa: FiniteAutomaton):
     return nfa
 
 
-def intersect_automata(fa1: FiniteAutomaton,
-                       fa2: FiniteAutomaton) -> FiniteAutomaton:
+def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAutomaton:
     matrix = dict()
     start_states = set()
     final_states = set()
@@ -95,5 +98,10 @@ def intersect_automata(fa1: FiniteAutomaton,
             if u in fa1.final_states and v in fa2.final_states:
                 final_states.add(State(k))
 
-    return FiniteAutomaton(fa=None, matrix=matrix, start_states=start_states, final_states=final_states,
-                           states_to_int=states_to_int)
+    return FiniteAutomaton(
+        fa=None,
+        matrix=matrix,
+        start_states=start_states,
+        final_states=final_states,
+        states_to_int=states_to_int,
+    )
