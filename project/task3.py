@@ -1,7 +1,15 @@
 import scipy as sp
 
 from typing import Iterable
+
+import networkx as nx
+from networkx import MultiDiGraph
+from networkx.classes.reportviews import NodeView
 from pyformlang.finite_automaton import *
+
+# from scipy.sparse import dok_matrix
+
+from project.task2 import graph_to_nfa, regex_to_dfa
 
 
 class FiniteAutomaton:
@@ -40,6 +48,12 @@ class FiniteAutomaton:
         return self.nfa.is_empty()
 
 
+def to_set(state):
+    if not isinstance(state, set):
+        return {state}
+    return state
+
+
 def to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
     len_states = len(fa.states)
     result = dict()
@@ -48,7 +62,7 @@ def to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
         result[symbol] = sp.sparse.dok_matrix((len_states, len_states), dtype=bool)
         for v, edges in fa.to_dict().items():
             if symbol in edges:
-                for u in {edges[symbol]}:
+                for u in to_set(edges[symbol]):
                     result[symbol][states_to_int[v], states_to_int[u]] = True
 
     return result
@@ -105,3 +119,42 @@ def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAuto
         final_states=final_states,
         states_to_int=states_to_int,
     )
+
+
+def transitive_closure(fa: FiniteAutomaton):
+    if len(fa.matrix.values()) == 0:
+        return sp.sparse.dok_matrix((0, 0), dtype=bool)
+
+    front = None
+    for mat in fa.matrix.values():
+        if front is None:
+            front = mat
+            continue
+        front = front + mat
+    prev = 0
+    while front.count_nonzero() != prev:
+        prev = front.count_nonzero()
+        front += front @ front
+
+    return front
+
+
+def paths_ends(
+    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
+) -> list[tuple[int, int]]:
+    graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
+    regex_fa = FiniteAutomaton(regex_to_dfa(regex))
+    intersect = intersect_automata(graph_fa, regex_fa)
+    closure = transitive_closure(intersect)
+
+    reg_size = len(regex_fa.states_to_int)
+    result = list()
+    for v, u in zip(*closure.nonzero()):
+        if v in intersect.start_states and u in intersect.final_states:
+            result.append(
+                (
+                    graph_fa.states_to_int[v // reg_size],
+                    graph_fa.states_to_int[u // reg_size],
+                )
+            )
+    return result
