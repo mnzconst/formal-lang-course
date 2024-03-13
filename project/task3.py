@@ -20,13 +20,13 @@ class FiniteAutomaton:
     nfa = None
 
     def __init__(
-            self,
-            fa: NondeterministicFiniteAutomaton = None,
-            *,
-            matrix=None,
-            start_states=None,
-            final_states=None,
-            states_to_int=None
+        self,
+        fa: NondeterministicFiniteAutomaton = None,
+        *,
+        matrix=None,
+        start_states=None,
+        final_states=None,
+        states_to_int=None
     ):
         if fa is None:
             self.matrix = matrix
@@ -139,8 +139,9 @@ def transitive_closure(fa: FiniteAutomaton):
     return front
 
 
-def paths_ends(graph: MultiDiGraph, start_nodes: set[int],
-               final_nodes: set[int], regex: str) -> list[tuple[int, int]]:
+def paths_ends(
+    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
+) -> list[tuple[int, int]]:
     graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
     regex_fa = FiniteAutomaton(regex_to_dfa(regex))
     intersect = intersect_automata(graph_fa, regex_fa)
@@ -150,5 +151,10 @@ def paths_ends(graph: MultiDiGraph, start_nodes: set[int],
     result = list()
     for v, u in zip(*closure.nonzero()):
         if v in intersect.start_states and u in intersect.final_states:
-            result.append((graph_fa.states_to_int[v // reg_size], graph_fa.states_to_int[u // reg_size]))
+            result.append(
+                (
+                    graph_fa.states_to_int[v // reg_size],
+                    graph_fa.states_to_int[u // reg_size],
+                )
+            )
     return result

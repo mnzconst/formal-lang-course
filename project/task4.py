@@ -1,8 +1,9 @@
 from project.task3 import FiniteAutomaton, intersect_automata, transitive_closure
 
 
-def reachability_with_constraints(fa: FiniteAutomaton,
-                                  constraints_fa: FiniteAutomaton) -> dict[int, set[int]]:
+def reachability_with_constraints(
+    fa: FiniteAutomaton, constraints_fa: FiniteAutomaton
+) -> dict[int, set[int]]:
     inter = intersect_automata(fa, constraints_fa)
     closure = transitive_closure(inter)
 
