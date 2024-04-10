@@ -1,13 +1,8 @@
-import scipy as sp
-
 from typing import Iterable
-
-import networkx as nx
 from networkx import MultiDiGraph
-from networkx.classes.reportviews import NodeView
 from pyformlang.finite_automaton import *
 
-# from scipy.sparse import dok_matrix
+from scipy.sparse import dok_matrix, kron
 
 from project.task2 import graph_to_nfa, regex_to_dfa
 
@@ -18,6 +13,7 @@ class FiniteAutomaton:
     final_states = None
     states_to_int = None
     nfa = None
+    lbl = True
 
     def __init__(
         self,
@@ -26,7 +22,7 @@ class FiniteAutomaton:
         matrix=None,
         start_states=None,
         final_states=None,
-        states_to_int=None
+        states_to_int=None,
     ):
         if fa is None:
             self.matrix = matrix
@@ -47,6 +43,24 @@ class FiniteAutomaton:
     def is_empty(self) -> bool:
         return self.nfa.is_empty()
 
+    def size(self):
+        return len(self.states_to_int)
+
+    def mapping_for(self, u) -> int:
+        return self.states_to_int[State(u)]
+
+    def start_inds(self):
+        return [self.mapping_for(t) for t in self.start_states]
+
+    def final_inds(self):
+        return [self.mapping_for(t) for t in self.final_states]
+
+    def indexes_dict(self):
+        return {i: v for v, i in self.states_to_int.items()}
+
+    def labels(self):
+        return self.states_to_int.keys() if self.lbl else self.matrix.keys()
+
 
 def to_set(state):
     if not isinstance(state, set):
@@ -59,7 +73,7 @@ def to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
     result = dict()
 
     for symbol in fa.symbols:
-        result[symbol] = sp.sparse.dok_matrix((len_states, len_states), dtype=bool)
+        result[symbol] = dok_matrix((len_states, len_states), dtype=bool)
         for v, edges in fa.to_dict().items():
             if symbol in edges:
                 for u in to_set(edges[symbol]):
@@ -90,7 +104,10 @@ def to_nfa(fa: FiniteAutomaton):
     return nfa
 
 
-def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAutomaton:
+def intersect_automata(
+    fa1: FiniteAutomaton, fa2: FiniteAutomaton, lbl=True
+) -> FiniteAutomaton:
+    fa1.lbl = fa2.lbl = not lbl
     matrix = dict()
     start_states = set()
     final_states = set()
@@ -98,7 +115,7 @@ def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAuto
     symbols = fa1.matrix.keys() & fa2.matrix.keys()
 
     for symbol in symbols:
-        matrix[symbol] = sp.sparse.kron(fa1.matrix[symbol], fa2.matrix[symbol], "csr")
+        matrix[symbol] = kron(fa1.matrix[symbol], fa2.matrix[symbol], "csr")
 
     for u, i in fa1.states_to_int.items():
         for v, j in fa2.states_to_int.items():
@@ -123,7 +140,7 @@ def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAuto
 
 def transitive_closure(fa: FiniteAutomaton):
     if len(fa.matrix.values()) == 0:
-        return sp.sparse.dok_matrix((0, 0), dtype=bool)
+        return dok_matrix((0, 0), dtype=bool)
 
     front = None
     for mat in fa.matrix.values():
@@ -139,22 +156,25 @@ def transitive_closure(fa: FiniteAutomaton):
     return front
 
 
-def paths_ends(
-    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
-) -> list[tuple[int, int]]:
-    graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
-    regex_fa = FiniteAutomaton(regex_to_dfa(regex))
-    intersect = intersect_automata(graph_fa, regex_fa)
-    closure = transitive_closure(intersect)
+def reachability_with_constraints_transitive(
+    graph_nfa, regex_dfa
+) -> list[tuple[object, object]]:
+    intersection = intersect_automata(graph_nfa, regex_dfa, lbl=False)
+    closure = transitive_closure(intersection)
 
-    reg_size = len(regex_fa.states_to_int)
+    mapping = {v: i for i, v in graph_nfa.mapping.items()}
     result = list()
-    for v, u in zip(*closure.nonzero()):
-        if v in intersect.start_states and u in intersect.final_states:
+    for u, v in zip(*closure.nonzero()):
+        if u in intersection.start_states and v in intersection.final_states:
             result.append(
-                (
-                    graph_fa.states_to_int[v // reg_size],
-                    graph_fa.states_to_int[u // reg_size],
-                )
+                (mapping[u // regex_dfa.size()], mapping[v // regex_dfa.size()])
             )
     return result
+
+
+def paths_ends(
+    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
+) -> list[tuple[object, object]]:
+    graph_nfa = to_mat(graph_to_nfa(graph, start_nodes, final_nodes))
+    regex_dfa = to_mat(regex_to_dfa(regex))
+    return reachability_with_constraints_transitive(graph_nfa, regex_dfa)
