@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from typing import Set, Tuple
 import pyformlang
 from pyformlang.cfg import Terminal, Epsilon
