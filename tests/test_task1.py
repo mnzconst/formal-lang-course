@@ -1,5 +1,5 @@
 import pytest
-from project.task_1 import graph_info, combine_graphs
+from project.task1 import graph_info, combine_graphs
 import networkx as nx
 import cfpq_data
 import os

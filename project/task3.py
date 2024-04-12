@@ -1,9 +1,7 @@
 from typing import Iterable
 from networkx import MultiDiGraph
 from pyformlang.finite_automaton import *
-
 from scipy.sparse import dok_matrix, kron
-
 from project.task2 import graph_to_nfa, regex_to_dfa
 
 

@@ -1,5 +1,3 @@
-from scipy.sparse import block_diag, dok_matrix
-
 from project.task3 import FiniteAutomaton, intersect_automata, transitive_closure
 
 
