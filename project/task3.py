@@ -16,13 +16,13 @@ class FiniteAutomaton:
     lbl = True
 
     def __init__(
-        self,
-        fa: NondeterministicFiniteAutomaton = None,
-        *,
-        matrix=None,
-        start_states=None,
-        final_states=None,
-        states_to_int=None,
+            self,
+            fa: NondeterministicFiniteAutomaton = None,
+            *,
+            matrix=None,
+            start_states=None,
+            final_states=None,
+            states_to_int=None,
     ):
         if fa is None:
             self.matrix = matrix
@@ -54,9 +54,6 @@ class FiniteAutomaton:
 
     def final_inds(self):
         return [self.mapping_for(t) for t in self.final_states]
-
-    def indexes_dict(self):
-        return {i: v for v, i in self.states_to_int.items()}
 
     def labels(self):
         return self.states_to_int.keys() if self.lbl else self.matrix.keys()
@@ -105,17 +102,19 @@ def to_nfa(fa: FiniteAutomaton):
 
 
 def intersect_automata(
-    fa1: FiniteAutomaton, fa2: FiniteAutomaton, lbl=True
+        fa1: FiniteAutomaton,
+        fa2: FiniteAutomaton,
+        lbl=True
 ) -> FiniteAutomaton:
     fa1.lbl = fa2.lbl = not lbl
+    labels = fa1.labels() & fa2.labels()
     matrix = dict()
     start_states = set()
     final_states = set()
     states_to_int = dict()
-    symbols = fa1.matrix.keys() & fa2.matrix.keys()
 
-    for symbol in symbols:
-        matrix[symbol] = kron(fa1.matrix[symbol], fa2.matrix[symbol], "csr")
+    for label in labels:
+        matrix[label] = kron(fa1.matrix[label], fa2.matrix[label], "csr")
 
     for u, i in fa1.states_to_int.items():
         for v, j in fa2.states_to_int.items():
@@ -156,25 +155,25 @@ def transitive_closure(fa: FiniteAutomaton):
     return front
 
 
-def reachability_with_constraints_transitive(
-    graph_nfa, regex_dfa
+def paths_ends(
+        graph: MultiDiGraph,
+        start_nodes: set[int],
+        final_nodes: set[int],
+        regex: str
 ) -> list[tuple[object, object]]:
-    intersection = intersect_automata(graph_nfa, regex_dfa, lbl=False)
-    closure = transitive_closure(intersection)
+    graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
+    regex_fa = FiniteAutomaton(regex_to_dfa(regex))
+    intersect = intersect_automata(graph_fa, regex_fa, lbl=False)
 
-    mapping = {v: i for i, v in graph_nfa.mapping.items()}
+    closure = transitive_closure(intersect)
+    reg_size = len(regex_fa.states_to_int)
     result = list()
-    for u, v in zip(*closure.nonzero()):
-        if u in intersection.start_states and v in intersection.final_states:
+    for v, u in zip(*closure.nonzero()):
+        if v in intersect.start_states and u in intersect.final_states:
             result.append(
-                (mapping[u // regex_dfa.size()], mapping[v // regex_dfa.size()])
+                (
+                    graph_fa.states_to_int[v // reg_size],
+                    graph_fa.states_to_int[u // reg_size],
+                )
             )
     return result
-
-
-def paths_ends(
-    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
-) -> list[tuple[object, object]]:
-    graph_nfa = to_mat(graph_to_nfa(graph, start_nodes, final_nodes))
-    regex_dfa = to_mat(regex_to_dfa(regex))
-    return reachability_with_constraints_transitive(graph_nfa, regex_dfa)

@@ -6,46 +6,18 @@ from project.task3 import FiniteAutomaton, intersect_automata, transitive_closur
 def reachability_with_constraints(
     fa: FiniteAutomaton, constraints_fa: FiniteAutomaton
 ) -> dict[int, set[int]]:
+    inter = intersect_automata(fa, constraints_fa, lbl=False)
+    closure = transitive_closure(inter)
 
-    m, n = constraints_fa.size(), fa.size()
+    mapping = {v: i for i, v in fa.states_to_int.items()}
+    con_len = len(constraints_fa.states_to_int)
 
-    def get_front(s):
-        front = dok_matrix((m, m + n), dtype=bool)
-        for i in constraints_fa.start_inds():
-            front[i, i] = True
-        for i in range(m):
-            front[i, s + m] = True
-        return front
+    result = dict()
+    for start in fa.start_states:
+        result[start] = set()
 
-    def diagonalized(mat):
-        result = dok_matrix(mat.shape, dtype=bool)
-        for i in range(mat.shape[0]):
-            for j in range(mat.shape[0]):
-                if mat[j, i]:
-                    result[i] += mat[j]
-        return result
-
-    labels = fa.labels() & constraints_fa.labels()
-    result = {s: set() for s in fa.start_states}
-    adj = {
-        label: block_diag((constraints_fa.matrix[label], fa.matrix[label]))
-        for label in labels
-    }
-
-    for v in fa.start_inds():
-        front = get_front(v)
-        last_nnz = -1
-        for _ in range(m * n):
-            front = sum(
-                [dok_matrix((m, m + n), dtype=bool)]
-                + [diagonalized(front @ adj[label]) for label in labels]
-            )
-            k = front[:, m:].nonzero()
-            for x, y in zip(k[0], k[1]):
-                if x in constraints_fa.final_inds() and y in fa.final_inds():
-                    result[v].add(y)
-            if hash(str(k)) == last_nnz:
-                break
-            last_nnz = hash(str(k))
+    for v, u in zip(*closure.nonzero()):
+        if v in inter.start_states and u in inter.final_states:
+            result[mapping[v // con_len]].add(mapping[u // con_len])
 
     return result
