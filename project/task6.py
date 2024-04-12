@@ -61,14 +61,6 @@ def cfpq_with_hellings(
                     if (N_j, N_i) in p3[N_k] and (N_k, v_, v) not in r:
                         m.add((N_k, v_, u))
                         r_tmp.add((N_k, v_, u))
-
-        for N_j, v_, u_ in r:
-            if u == v_:
-                for N_k in p3:
-                    if (N_i, N_j) in p3[N_k] and (N_k, v, u_) not in r:
-                        m.add((N_k, v, u_))
-                        r_tmp.add((N_k, v, u_))
-
         r |= r_tmp
 
     return {
