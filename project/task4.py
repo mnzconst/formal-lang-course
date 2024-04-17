@@ -4,7 +4,7 @@ from project.task3 import FiniteAutomaton, intersect_automata, transitive_closur
 def reachability_with_constraints(
     fa: FiniteAutomaton, constraints_fa: FiniteAutomaton
 ) -> dict[int, set[int]]:
-    inter = intersect_automata(fa, constraints_fa)
+    inter = intersect_automata(fa, constraints_fa, lbl=False)
     closure = transitive_closure(inter)
 
     mapping = {v: i for i, v in fa.states_to_int.items()}

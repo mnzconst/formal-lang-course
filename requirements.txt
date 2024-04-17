@@ -1,6 +1,6 @@
 antlr4-python3-runtime
 black
-cfpq-data
+cfpq_data
 networkx
 pre-commit
 pydot
