@@ -6,10 +6,10 @@ from project.task6 import cfg_to_weak_normal_form
 
 
 def cfpq_with_matrix(
-    cfg: pyformlang.cfg.CFG,
-    graph: nx.DiGraph,
-    start_nodes: Set[int] = None,
-    final_nodes: Set[int] = None,
+        cfg: pyformlang.cfg.CFG,
+        graph: nx.DiGraph,
+        start_nodes: Set[int] = None,
+        final_nodes: Set[int] = None,
 ) -> set[tuple[int, int]]:
     cfg = cfg_to_weak_normal_form(cfg)
     n = len(graph.nodes)
@@ -19,9 +19,9 @@ def cfpq_with_matrix(
         label = data["label"]
         for prod in cfg.productions:
             if (
-                len(prod.body) == 1
-                and isinstance(prod.body[0], Variable)
-                and prod.body[0].value == label
+                    len(prod.body) == 1
+                    and isinstance(prod.body[0], Variable)
+                    and prod.body[0].value == label
             ):
                 if (i, j) not in mat:
                     mat[(i, j)] = set()
@@ -56,7 +56,7 @@ def cfpq_with_matrix(
 
             if (i, j) in mat:
                 if (start_nodes is None or i in start_nodes) and (
-                    final_nodes is None or j in final_nodes
+                        final_nodes is None or j in final_nodes
                 ):
                     result.add((i, j))
 
