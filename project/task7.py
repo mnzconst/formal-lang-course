@@ -37,7 +37,9 @@ def cfpq_with_matrix(
                 mat_a, mat_b = production.body
                 if mat_a in variable_indices and mat_b in variable_indices:
                     before = adj_matrices[production.head].nnz
-                    adj_matrices[production.head] += adj_matrices[mat_a] * adj_matrices[mat_b]
+                    adj_matrices[production.head] += (
+                        adj_matrices[mat_a] * adj_matrices[mat_b]
+                    )
                     after = adj_matrices[production.head].nnz
                     if before != after:
                         mat_changes = True
@@ -48,7 +50,7 @@ def cfpq_with_matrix(
             matrix = matrix.tocoo()
             for i, j in zip(matrix.row, matrix.col):
                 if (start_nodes is None or i in start_nodes) and (
-                        final_nodes is None or j in final_nodes
+                    final_nodes is None or j in final_nodes
                 ):
                     result.add((i, j))
     return result
