@@ -1,7 +1,9 @@
 from typing import Set
 import networkx as nx
 import pyformlang
-from pyformlang.cfg import Variable
+from pyformlang.cfg import Variable, Terminal
+from scipy.sparse import lil_matrix
+
 from project.task6 import cfg_to_weak_normal_form
 
 
@@ -12,52 +14,41 @@ def cfpq_with_matrix(
     final_nodes: Set[int] = None,
 ) -> set[tuple[int, int]]:
     cfg = cfg_to_weak_normal_form(cfg)
-    n = len(graph.nodes)
-    mat = {}
+    nonterminals = {prod.head for prod in cfg.productions}
+    variable_indices = {var: idx for idx, var in enumerate(nonterminals)}
+    num_vertices = graph.number_of_nodes()
 
-    for i, j, data in graph.edges(data=True):
-        label = data["label"]
-        for prod in cfg.productions:
-            if (
-                len(prod.body) == 1
-                and isinstance(prod.body[0], Variable)
-                and prod.body[0].value == label
-            ):
-                if (i, j) not in mat:
-                    mat[(i, j)] = set()
-                mat[(i, j)].add(prod.head)
+    adj_matrices = {
+        var: lil_matrix((num_vertices, num_vertices), dtype=bool)
+        for var in nonterminals
+    }
 
-    while True:
-        mat_changed = False
-        new_mat = mat.copy()
+    for edge in graph.edges(data=True):
+        for production in cfg.productions:
+            if len(production.body) == 1 and isinstance(production.body[0], Terminal):
+                if str(edge[2].get("label", "")) == str(production.body[0]):
+                    adj_matrices[production.head][edge[0], edge[1]] = True
 
-        for i in range(n):
-            for j in range(n):
-                for k in range(n):
-
-                    if (i, k) in mat and (k, j) in mat:
-                        for prod in cfg.productions:
-
-                            if len(prod.body) == 2:
-                                mat_b, mat_c = prod.body
-                                if mat_b in mat[(i, k)] and mat_c in mat[(k, j)]:
-                                    if (i, j) not in new_mat:
-                                        new_mat[(i, j)] = set()
-                                    if prod.head not in new_mat[(i, j)]:
-                                        new_mat[(i, j)].add(prod.head)
-                                        mat_changes = True
-        mat = new_mat
-        if not mat_changed:
-            break
+    mat_changes = True
+    while mat_changes:
+        mat_changes = False
+        for production in cfg.productions:
+            if len(production.body) == 2:
+                mat_a, mat_b = production.body
+                if mat_a in variable_indices and mat_b in variable_indices:
+                    before = adj_matrices[production.head].nnz
+                    adj_matrices[production.head] += adj_matrices[mat_a] * adj_matrices[mat_b]
+                    after = adj_matrices[production.head].nnz
+                    if before != after:
+                        mat_changes = True
 
     result = set()
-    for i in range(n):
-        for j in range(n):
-
-            if (i, j) in mat:
+    for variable, matrix in adj_matrices.items():
+        if variable == cfg.start_symbol:
+            matrix = matrix.tocoo()
+            for i, j in zip(matrix.row, matrix.col):
                 if (start_nodes is None or i in start_nodes) and (
-                    final_nodes is None or j in final_nodes
+                        final_nodes is None or j in final_nodes
                 ):
                     result.add((i, j))
-
     return result
