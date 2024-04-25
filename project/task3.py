@@ -1,4 +1,5 @@
 from typing import Iterable
+from pyformlang.rsa import RecursiveAutomaton
 from networkx import MultiDiGraph
 from pyformlang.finite_automaton import *
 from scipy.sparse import dok_matrix, kron
@@ -12,6 +13,7 @@ class FiniteAutomaton:
     states_to_int = None
     nfa = None
     lbl = True
+    epsilons = None
 
     def __init__(
         self,
@@ -21,17 +23,21 @@ class FiniteAutomaton:
         start_states=None,
         final_states=None,
         states_to_int=None,
+        bad_states=False,
+        epsilons=None
     ):
         if fa is None:
             self.matrix = matrix
             self.start_states = start_states
             self.final_states = final_states
             self.states_to_int = states_to_int
-            self.nfa = to_nfa(self)
+            self.epsilons = epsilons
+            if not bad_states:
+                self.nfa = to_nfa(self)
         else:
             self.states_to_int = {v: i for i, v in enumerate(fa.states)}
             self.nfa = fa
-            self.matrix = to_mat(fa, self.states_to_int)
+            self.matrix = nfa_to_mat(fa, self.states_to_int)
             self.start_states = fa.start_states
             self.final_states = fa.final_states
 
@@ -56,6 +62,9 @@ class FiniteAutomaton:
     def labels(self):
         return self.states_to_int.keys() if self.lbl else self.matrix.keys()
 
+    def revert_mapping(self):
+        return {i: v for v, i in self.states_to_int.items()}
+
 
 def to_set(state):
     if not isinstance(state, set):
@@ -63,7 +72,7 @@ def to_set(state):
     return state
 
 
-def to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
+def nfa_to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
     len_states = len(fa.states)
     result = dict()
 
@@ -75,6 +84,50 @@ def to_mat(fa: NondeterministicFiniteAutomaton, states_to_int=None):
                     result[symbol][states_to_int[v], states_to_int[u]] = True
 
     return result
+
+
+def rsm_to_fa(rsm: RecursiveAutomaton) -> FiniteAutomaton:
+    states = set()
+    start_states = set()
+    final_states = set()
+    epsilons = set()
+
+    for label, enfa in rsm.boxes.items():
+        for state in enfa.dfa.states:
+            s = State((label, state.value))
+            states.add(s)
+            if state in enfa.dfa.start_states:
+                start_states.add(s)
+            if state in enfa.dfa.final_states:
+                final_states.add(s)
+
+    len_states = len(states)
+    states_to_int = {s: i for i, s in enumerate(states)}
+
+    matrix = dict()
+    for label, enfa in rsm.boxes.items():
+        for frm, transition in enfa.dfa.to_dict().items():
+            for symbol, to in transition.items():
+                var = symbol.value
+                if symbol not in matrix:
+                    matrix[var] = dok_matrix((len_states, len_states), dtype=bool)
+                for target in to_set(to):
+                    matrix[var][
+                        states_to_int[State((label, frm.value))],
+                        states_to_int[State((label, target.value))],
+                    ] = True
+                if isinstance(to, Epsilon):
+                    epsilons.add(label)
+
+    return FiniteAutomaton(
+        fa=None,
+        matrix=matrix,
+        start_states=start_states,
+        final_states=final_states,
+        states_to_int=states_to_int,
+        bad_states=True,
+        epsilons=epsilons,
+    )
 
 
 def to_nfa(fa: FiniteAutomaton):

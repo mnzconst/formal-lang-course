@@ -1,85 +1,93 @@
-from typing import Dict, Any
-
 import networkx as nx
 import pyformlang
-from numpy import kron
-from pyformlang.finite_automaton import State, NondeterministicFiniteAutomaton
-from scipy.sparse import csr_matrix, block_diag
-
+from pyformlang.cfg import Epsilon
+from pyformlang.finite_automaton import Symbol
+from pyformlang.regular_expression import Regex
+from pyformlang.rsa import Box
+from scipy.sparse import dok_matrix, eye
 from project.task2 import graph_to_nfa
-from project.task3 import FiniteAutomaton
-
+from project.task3 import (
+    FiniteAutomaton,
+    transitive_closure,
+    intersect_automata,
+    rsm_to_fa,
+)
 
 
 def cfpq_with_tensor(
-        rsm: pyformlang.rsa.RecursiveAutomaton,
-        graph: nx.MultiDiGraph,
-        final_nodes: set[int] = None,
-        start_nodes: set[int] = None,
+    rsm: pyformlang.rsa.RecursiveAutomaton,
+    graph: nx.MultiDiGraph,
+    final_nodes: set[int] = None,
+    start_nodes: set[int] = None,
 ) -> set[tuple[int, int]]:
+    rsm_fa = rsm_to_fa(rsm)
+    graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
+    mat_idxs = rsm_fa.revert_mapping()
+    graph_idxs = graph_fa.revert_mapping()
 
-    # for production in cfg.productions:
-    #     if len(production.body) != 0:
-    #         continue
-    #
-    #     variable = production.head
-    #     if variable not in graph_decomposed.matrices:
-    #         graph_decomposed.matrices[variable] = csr_matrix(
-    #             (graph_decomposed.num_states, graph_decomposed.num_states), dtype=bool
-    #         )
-    #
-    #     for vertice in range(graph_decomposed.num_states):
-    #         graph_decomposed.matrices[variable][vertice, vertice] = True
+    n = len(graph_fa.states_to_int)
+    for eps in rsm_fa.epsilons:
+        if eps not in graph_fa.matrix:
+            graph_fa.matrix[eps] = dok_matrix((n, n), dtype=bool)
+        graph_fa.matrix[eps] += eye(n, dtype=bool)
 
-    transitive_closure = csr_matrix(
-        (graph_decomposed.num_states, graph_decomposed.num_states), dtype=bool
-    )
-    matrix_changed = True
-    states_by_indices = {
-        i: state for state, i in rsm_decomposed.states_with_indices.items()
-    }
-    while matrix_changed:
-        matrix_changed = False
+    len_closure = 0
+    while True:
+        closure = transitive_closure(intersect_automata(rsm_fa, graph_fa))
+        closure = list(zip(*closure.nonzero()))
 
-        prev_nnz = transitive_closure.nnz
-        transitive_closure = rsm_decomposed.intersect(
-            graph_decomposed
-        ).transitive_closure()
-        matrix_changed |= prev_nnz != transitive_closure.nnz
+        if len_closure != len(closure):
+            len_closure = len(closure)
+        else:
+            break
 
-        for idx_from, idx_to in zip(*transitive_closure.nonzero()):
-            state_from = states_by_indices[idx_from // graph_decomposed.num_states]
-            variable = state_from.value[0]
+        for i, j in closure:
+            frm = mat_idxs[i // n]
+            to = mat_idxs[j // n]
 
-            # if variable not in rsm.:
-            #     continue
+            if frm in rsm_fa.start_states and to in rsm_fa.final_states:
+                sybl = frm.value[0]
+                if sybl not in graph_fa.matrix:
+                    graph_fa.matrix[sybl] = dok_matrix((n, n), dtype=bool)
+                graph_fa.matrix[sybl][i % n, j % n] = True
 
-            state_to = states_by_indices[idx_to // graph_decomposed.num_states]
+    result = set()
+    for _, matrix in graph_fa.matrix.items():
+        for i, j in zip(*matrix.nonzero()):
             if (
-                    state_from in rsm_decomposed.start_states
-                    and state_to in rsm_decomposed.final_states
+                graph_idxs[i] in rsm_fa.start_states
+                and graph_idxs[j] in rsm_fa.final_states
             ):
-                if variable not in graph_decomposed.matrices:
-                    graph_decomposed.matrices[variable] = csr_matrix(
-                        (graph_decomposed.num_states, graph_decomposed.num_states),
-                        dtype=bool,
-                    )
+                result.add((graph_idxs[i], graph_idxs[j]))
 
-                graph_decomposed.matrices[variable][
-                    idx_from % graph_decomposed.num_states,
-                    idx_to % graph_decomposed.num_states,
-                ] = True
-
-    return set(
-        (v_from, v_to)
-        for variable, matrix in graph_decomposed.matrices.items()
-        for v_from, v_to in zip(*matrix.nonzero())
-        # if variable in cfg.variables
-    )
+    return result
 
 
 def cfg_to_rsm(cfg: pyformlang.cfg.CFG) -> pyformlang.rsa.RecursiveAutomaton:
-    return pyformlang.rsa.RecursiveAutomaton.from_text(cfg.to_text())
+    productions = {}
+    boxes = set()
+    labels = set()
+    for production in cfg.productions:
+        if len(production.body) == 0:
+            regex = Regex(
+                " ".join(
+                    "$" if isinstance(var, Epsilon) else var.value
+                    for var in production.body
+                )
+            )
+        else:
+            regex = Regex("$")
+        head = Symbol(production.head)
+        labels.add(head)
+        if head not in productions:
+            productions[head] = regex
+        else:
+            productions[head] = productions[head].union(regex)
+
+    for head, body in productions.items():
+        boxes.add(Box(body.to_epsilon_nfa().minimize(), head))
+
+    return pyformlang.rsa.RecursiveAutomaton(labels, Symbol("S"), boxes)
 
 
 def ebnf_to_rsm(ebnf: str) -> pyformlang.rsa.RecursiveAutomaton:
