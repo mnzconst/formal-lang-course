@@ -12,16 +12,13 @@ from project.task3 import FiniteAutomaton, rsm_to_fa
 
 
 def cfpq_with_tensor(
-        cfg_or_rsm: CFG | RecursiveAutomaton,
+        rsm: RecursiveAutomaton,
         graph: nx.MultiDiGraph,
         start_nodes: set[int] = None,
         final_nodes: set[int] = None,
 ) -> set[tuple[int, int]]:
-    rsm = (
-        cfg_or_rsm
-        if isinstance(cfg_or_rsm, RecursiveAutomaton)
-        else cfg_to_rsm(cfg_or_rsm)
-    )
+    if isinstance(rsm, CFG):
+        rsm = cfg_to_rsm(rsm)
 
     if start_nodes is None:
         start_nodes = graph.nodes
