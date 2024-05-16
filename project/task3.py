@@ -135,17 +135,13 @@ def to_nfa(fa: FiniteAutomaton):
     return nfa
 
 
-def intersect_automata(
-    fa1: FiniteAutomaton, fa2: FiniteAutomaton, lbl=True
-) -> FiniteAutomaton:
-    fa1.lbl = fa2.lbl = not lbl
-    labels = fa1.labels() & fa2.labels()
+def intersect_automata(fa1: FiniteAutomaton, fa2: FiniteAutomaton) -> FiniteAutomaton:
     matrix = dict()
     start_states = set()
     final_states = set()
     states_to_int = dict()
 
-    for label in labels:
+    for label in fa1.matrix.keys() & fa2.matrix.keys():
         matrix[label] = kron(fa1.matrix[label], fa2.matrix[label], "csr")
 
     for u, i in fa1.states_to_int.items():
