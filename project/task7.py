@@ -1,56 +1,62 @@
+import copy
 from typing import Set
 import networkx as nx
 import pyformlang
-from pyformlang.cfg import Variable, Terminal
-from scipy.sparse import lil_matrix
-
+from pyformlang.cfg import Terminal
+from scipy.sparse import dok_matrix
 from project.task6 import cfg_to_weak_normal_form
 
 
 def cfpq_with_matrix(
-    cfg: pyformlang.cfg.CFG,
-    graph: nx.DiGraph,
-    start_nodes: Set[int] = None,
-    final_nodes: Set[int] = None,
+        cfg: pyformlang.cfg.CFG,
+        graph: nx.DiGraph,
+        start_nodes: Set[int] = None,
+        final_nodes: Set[int] = None,
 ) -> set[tuple[int, int]]:
+    if start_nodes is None:
+        start_nodes = graph.nodes
+    if final_nodes is None:
+        final_nodes = graph.nodes
+
     cfg = cfg_to_weak_normal_form(cfg)
-    nonterminals = {prod.head for prod in cfg.productions}
-    variable_indices = {var: idx for idx, var in enumerate(nonterminals)}
-    num_vertices = graph.number_of_nodes()
 
-    adj_matrices = {
-        var: lil_matrix((num_vertices, num_vertices), dtype=bool)
-        for var in nonterminals
-    }
+    M = {}
+    eps = set()
+    terms = {}
+    nn = {}
 
-    for edge in graph.edges(data=True):
-        for production in cfg.productions:
-            if len(production.body) == 1 and isinstance(production.body[0], Terminal):
-                if str(edge[2].get("label", "")) == str(production.body[0]):
-                    adj_matrices[production.head][edge[0], edge[1]] = True
+    for p in cfg.productions:
+        if len(p.body) == 0:
+            eps.add(p.head.to_text())
+        if len(p.body) == 1 and isinstance(p.body[0], Terminal):
+            terms.setdefault(p.body[0].to_text(), set()).add(p.head.to_text())
+        M[p.head.to_text()] = dok_matrix(
+            (graph.number_of_nodes(), graph.number_of_nodes()), dtype=bool
+        )
+        if len(p.body) == 2:
+            nn.setdefault(p.head.to_text(), set()).add(
+                (p.body[0].to_text(), p.body[1].to_text())
+            )
 
-    mat_changes = True
-    while mat_changes:
-        mat_changes = False
-        for production in cfg.productions:
-            if len(production.body) == 2:
-                mat_a, mat_b = production.body
-                if mat_a in variable_indices and mat_b in variable_indices:
-                    before = adj_matrices[production.head].nnz
-                    adj_matrices[production.head] += (
-                        adj_matrices[mat_a] * adj_matrices[mat_b]
-                    )
-                    after = adj_matrices[production.head].nnz
-                    if before != after:
-                        mat_changes = True
+    for b, e, t in graph.edges(data="label"):
+        if t in terms:
+            for T in terms[t]:
+                M[T][b, e] = True
 
-    result = set()
-    for variable, matrix in adj_matrices.items():
-        if variable == cfg.start_symbol:
-            matrix = matrix.tocoo()
-            for i, j in zip(matrix.row, matrix.col):
-                if (start_nodes is None or i in start_nodes) and (
-                    final_nodes is None or j in final_nodes
-                ):
-                    result.add((i, j))
-    return result
+    for N in eps:
+        M[N].setdiag(True)
+
+    M_new = copy.deepcopy(M)
+    for m in M_new.values():
+        m.clear()
+
+    for i in range(graph.number_of_nodes() ** 2):
+        for N, NN in nn.items():
+            for Nl, Nr in NN:
+                M_new[N] += M[Nl] @ M[Nr]
+        for N, m in M_new.items():
+            M[N] += m
+
+    S = cfg.start_symbol.to_text()
+    ns, ms = M[S].nonzero()
+    return {(n, m) for n, m in zip(ns, ms) if n in start_nodes and m in final_nodes}
