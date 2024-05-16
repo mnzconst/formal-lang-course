@@ -12,7 +12,7 @@ def diagonalise(m):
 
 
 def reachability_with_constraints(
-        fa: FiniteAutomaton, constraints_fa: FiniteAutomaton
+    fa: FiniteAutomaton, constraints_fa: FiniteAutomaton
 ) -> dict[int, set[int]]:
     matrices = {}
     len_con, len_fa = len(constraints_fa.states), len(fa.states)
@@ -25,8 +25,12 @@ def reachability_with_constraints(
     for start in fa.states:
         result[start] = set()
 
-    con_start_states = {constraints_fa.states_to_int[i] for i in constraints_fa.start_states}
-    con_final_states = {constraints_fa.states_to_int[i] for i in constraints_fa.final_states}
+    con_start_states = {
+        constraints_fa.states_to_int[i] for i in constraints_fa.start_states
+    }
+    con_final_states = {
+        constraints_fa.states_to_int[i] for i in constraints_fa.final_states
+    }
     fa_start_states = {fa.states_to_int[i] for i in fa.start_states}
     fa_final_states = {fa.states_to_int[i] for i in fa.final_states}
 

@@ -8,10 +8,10 @@ from project.task6 import cfg_to_weak_normal_form
 
 
 def cfpq_with_matrix(
-        cfg: pyformlang.cfg.CFG,
-        graph: nx.DiGraph,
-        start_nodes: Set[int] = None,
-        final_nodes: Set[int] = None,
+    cfg: pyformlang.cfg.CFG,
+    graph: nx.DiGraph,
+    start_nodes: Set[int] = None,
+    final_nodes: Set[int] = None,
 ) -> set[tuple[int, int]]:
     if start_nodes is None:
         start_nodes = graph.nodes
