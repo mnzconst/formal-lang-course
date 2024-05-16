@@ -16,15 +16,15 @@ class FiniteAutomaton:
     states = None
 
     def __init__(
-            self,
-            fa: NondeterministicFiniteAutomaton = None,
-            *,
-            matrix=None,
-            start_states=None,
-            final_states=None,
-            states_to_int=None,
-            states=None,
-            from_rsm=False,
+        self,
+        fa: NondeterministicFiniteAutomaton = None,
+        *,
+        matrix=None,
+        start_states=None,
+        final_states=None,
+        states_to_int=None,
+        states=None,
+        from_rsm=False,
     ):
         if fa is None:
             self.matrix = matrix
@@ -109,7 +109,7 @@ def rsm_to_fa(rsm: RecursiveAutomaton) -> FiniteAutomaton:
         final_states=final_states,
         states_to_int=mapping,
         states=states,
-        from_rsm=True
+        from_rsm=True,
     )
 
 
@@ -136,7 +136,7 @@ def to_nfa(fa: FiniteAutomaton):
 
 
 def intersect_automata(
-        fa1: FiniteAutomaton, fa2: FiniteAutomaton, lbl=True
+    fa1: FiniteAutomaton, fa2: FiniteAutomaton, lbl=True
 ) -> FiniteAutomaton:
     fa1.lbl = fa2.lbl = not lbl
     labels = fa1.labels() & fa2.labels()
@@ -188,7 +188,7 @@ def transitive_closure(fa: FiniteAutomaton):
 
 
 def paths_ends(
-        graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
+    graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int], regex: str
 ) -> list[tuple[object, object]]:
     graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
     regex_fa = FiniteAutomaton(regex_to_dfa(regex))
@@ -212,6 +212,11 @@ def paths_ends(
 
     for s, f in product(inter_start_states, inter_final_states):
         if m[s, f] != 0:
-            result.add((graph_fa.states[s // regex_fa_n].value, graph_fa.states[f // regex_fa_n].value))
+            result.add(
+                (
+                    graph_fa.states[s // regex_fa_n].value,
+                    graph_fa.states[f // regex_fa_n].value,
+                )
+            )
 
     return list(result)

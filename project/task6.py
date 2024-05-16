@@ -18,10 +18,10 @@ def cfg_from_file(path: str) -> CFG:
 
 
 def cfpq_with_hellings(
-        cfg: pyformlang.cfg.CFG,
-        graph: nx.DiGraph,
-        start_nodes: Set[int] = None,
-        final_nodes: Set[int] = None,
+    cfg: pyformlang.cfg.CFG,
+    graph: nx.DiGraph,
+    start_nodes: Set[int] = None,
+    final_nodes: Set[int] = None,
 ) -> Set[Tuple[int, int]]:
     if start_nodes is None:
         start_nodes = graph.nodes

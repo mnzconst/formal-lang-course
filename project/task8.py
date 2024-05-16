@@ -12,10 +12,10 @@ from project.task3 import FiniteAutomaton, rsm_to_fa
 
 
 def cfpq_with_tensor(
-        rsm: RecursiveAutomaton,
-        graph: nx.MultiDiGraph,
-        start_nodes: set[int] = None,
-        final_nodes: set[int] = None,
+    rsm: RecursiveAutomaton,
+    graph: nx.MultiDiGraph,
+    start_nodes: set[int] = None,
+    final_nodes: set[int] = None,
 ) -> set[tuple[int, int]]:
     if isinstance(rsm, CFG):
         rsm = cfg_to_rsm(rsm)
@@ -28,7 +28,9 @@ def cfpq_with_tensor(
     rsm_fa = rsm_to_fa(rsm)
     rsm_n_states = len(rsm_fa.states)
     graph_fa = FiniteAutomaton(graph_to_nfa(graph, start_nodes, final_nodes))
-    mapping = {i: state for i, state in enumerate(product(graph_fa.states, rsm_fa.states))}
+    mapping = {
+        i: state for i, state in enumerate(product(graph_fa.states, rsm_fa.states))
+    }
 
     graph_n_states = len(graph_fa.states)
 
@@ -59,7 +61,10 @@ def cfpq_with_tensor(
             to_state = mapping[to]
             from_rsm_state = from_state[1]
             to_rsm_state = to_state[1]
-            if from_rsm_state in rsm_fa.start_states and to_rsm_state in rsm_fa.final_states:
+            if (
+                from_rsm_state in rsm_fa.start_states
+                and to_rsm_state in rsm_fa.final_states
+            ):
                 N = from_rsm_state[0]
                 graph_from = graph_fa.states_to_int[from_state[0]]
                 graph_to = graph_fa.states_to_int[to_state[0]]
