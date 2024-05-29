@@ -16,17 +16,17 @@ public class langParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
-		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
-		T__17=18, T__18=19, T__19=20, T__20=21, T__21=22, T__22=23, T__23=24, 
+		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9,
+		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17,
+		T__17=18, T__18=19, T__19=20, T__20=21, T__21=22, T__22=23, T__23=24,
 		T__24=25, T__25=26, T__26=27, VAR=28, NUM=29, CHAR=30;
 	public static final int
-		RULE_prog = 0, RULE_stmt = 1, RULE_declare = 2, RULE_bind = 3, RULE_remove = 4, 
-		RULE_add = 5, RULE_expr = 6, RULE_set_expr = 7, RULE_edge_expr = 8, RULE_regexp = 9, 
+		RULE_prog = 0, RULE_stmt = 1, RULE_declare = 2, RULE_bind = 3, RULE_remove = 4,
+		RULE_add = 5, RULE_expr = 6, RULE_set_expr = 7, RULE_edge_expr = 8, RULE_regexp = 9,
 		RULE_range = 10, RULE_select = 11, RULE_v_filter = 12;
 	private static String[] makeRuleNames() {
 		return new String[] {
-			"prog", "stmt", "declare", "bind", "remove", "add", "expr", "set_expr", 
+			"prog", "stmt", "declare", "bind", "remove", "add", "expr", "set_expr",
 			"edge_expr", "regexp", "range", "select", "v_filter"
 		};
 	}
@@ -34,17 +34,17 @@ public class langParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'let'", "'is'", "'graph'", "'='", "'remove'", "'vertex'", "'edge'", 
-			"'vertices'", "'from'", "'add'", "'to'", "'['", "','", "']'", "'('", 
-			"')'", "'|'", "'^'", "'.'", "'&'", "'..'", "'return'", "'where'", "'reachable'", 
+			null, "'let'", "'is'", "'graph'", "'='", "'remove'", "'vertex'", "'edge'",
+			"'vertices'", "'from'", "'add'", "'to'", "'['", "','", "']'", "'('",
+			"')'", "'|'", "'^'", "'.'", "'&'", "'..'", "'return'", "'where'", "'reachable'",
 			"'in'", "'by'", "'for'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, null, null, null, null, null, null, null, null, null, null, 
-			null, null, null, null, null, null, null, null, null, null, null, null, 
+			null, null, null, null, null, null, null, null, null, null, null, null,
+			null, null, null, null, null, null, null, null, null, null, null, null,
 			null, null, null, null, "VAR", "NUM", "CHAR"
 		};
 	}
@@ -788,7 +788,7 @@ public class langParser extends Parser {
 						}
 						break;
 					}
-					} 
+					}
 				}
 				setState(113);
 				_errHandler.sync(this);
