@@ -17,8 +17,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip3 install -r requirements.txt
-      - name: Set u
+      - name: ANTLR4
         run: |
-          antlr4 -Dlanguage=Python3 project/language.g4 -visitor -o project/language
+          antlr4 -Dlanguage=Python3 project/lang.g4 -visitor -o project/lang
       - name: Run tests
         run: python3 ./scripts/run_tests.py
