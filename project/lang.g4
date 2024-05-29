@@ -1,12 +1,6 @@
 grammar lang;
 
-WS: [ \r\n\t]+ -> skip;
-
-VAR: [a-z] [a-z0-9]*;
-NUM: '0' | ([1-9][0-9]*);
-CHAR: '\u0022' [a-z] '\u0022';
-
-prog: stmt* EOF;
+prog: stmt*;
 
 stmt: bind | add | remove | declare;
 
@@ -41,3 +35,7 @@ select:
 		expr;
 
 v_filter: 'for' VAR 'in' expr;
+
+VAR: [a-z] [a-z0-9]*;
+NUM: '0' | ([1-9][0-9]*);
+CHAR: '\u0022' [a-z] '\u0022';
